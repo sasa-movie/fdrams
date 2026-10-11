@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Сериалы</title>
+<style>
+  :root {
+    --bg: #0B0F1A;
+    --card: #161C2E;
+    --card2: #232C44;
+    --accent: #7C5CFF;
+    --accent2: #22D3EE;
+    --text: #FFFFFF;
+    --muted: #8E97B5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(circle at top, #1a1440 0%, var(--bg) 55%) fixed;
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    background: rgba(11, 15, 26, 0.85);
+    padding: 18px 20px 10px;
+    border-bottom: 1px solid #222a40;
+  }
+  h1 {
+    margin: 0 0 12px;
+    font-size: 28px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .search { display: flex; gap: 10px; }
+  .search input {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #2a3350;
+    background: var(--card);
+    color: var(--text);
+    font-size: 16px;
+    outline: none;
+  }
+  .search input:focus { border-color: var(--accent); }
+  button { font: inherit; cursor: pointer; }
+  .btn {
+    padding: 12px 18px;
+    border-radius: 12px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .tab {
+    padding: 9px 16px;
+    border-radius: 20px;
+    border: 1px solid #2a3350;
+    background: transparent;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  main { padding: 20px; }
+  .status { color: var(--muted); margin: 4px 0 16px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 24px rgba(124, 92, 255, 0.35);
+  }
+  .poster {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    background: var(--card2);
+    display: block;
+  }
+  .card-body { padding: 10px 12px 14px; }
+  .card-title {
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.25;
+    margin-bottom: 6px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .meta { font-size: 13px; color: var(--accent2); }
+  .genres {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Окно с описанием */
+  .modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 20;
+  }
+  .modal.open { display: flex; }
+  .sheet {
+    background: var(--card);
+    border-radius: 20px;
+    max-width: 760px;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    display: flex;
+    gap: 22px;
+    padding: 22px;
+    position: relative;
+  }
+  .sheet img {
+    width: 220px;
+    max-width: 40%;
+    border-radius: 14px;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+  .sheet h2 { margin: 0 0 8px; font-size: 24px; }
+  .sheet .meta { font-size: 15px; margin-bottom: 6px; }
+  .sheet .genres { white-space: normal; font-size: 14px; margin-bottom: 14px; }
+  .sheet p { line-height: 1.55; color: #d6dbef; font-size: 15px; margin: 0 0 18px; }
+  .close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 28px;
+  }
+  .fav { background: var(--accent2); color: #0B0F1A; }
+  .fav.on { background: transparent; color: var(--accent2); border: 1px solid var(--accent2); }
+  @media (max-width: 600px) {
+    .sheet { flex-direction: column; align-items: center; }
+    .sheet img { width: 200px; max-width: 70%; }
+    .sheet > div { width: 100%; }
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Сериалы</h1>
+    <div class="search">
+      <input id="q" placeholder="Поиск сериала" autocomplete="off">
+      <button class="btn" id="searchBtn">Найти</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-cat="popular">Популярные</button>
+      <button class="tab" data-cat="rating">Лучшие</button>
+      <button class="tab" data-cat="favorites">Избранное</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="status" id="status"></div>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div class="modal" id="modal">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+  // Сервис TVMaze: ключ не нужен
+  const LIST_URL = "https://api.tvmaze.com/shows?page=0";
+  const SEARCH_URL = "https://api.tvmaze.com/search/shows?q=";
+
+  let cache = null;               // список сериалов, загруженный один раз
+  let category = "popular";
+  let requestId = 0;
+  let favorites = JSON.parse(localStorage.getItem("series_favs") || "[]");
+
+  const grid = document.getElementById("grid");
+  const statusEl = document.getElementById("status");
+  const input = document.getElementById("q");
+  const modal = document.getElementById("modal");
+  const sheet = document.getElementById("sheet");
+
+  // Превращает ответ TVMaze в простой список
+  function parseShows(data) {
+    return data.map(item => {
+      const s = item.show || item;
+      return {
+        id: s.id,
+        title: s.name || "Без названия",
+        year: s.premiered ? s.premiered.slice(0, 4) : "—",
+        rating: (s.rating && s.rating.average) || 0,
+        genres: (s.genres || []).join(", "),
+        overview: stripHtml(s.summary || ""),
+        image: s.image ? s.image.medium : null,
+        imageBig: s.image ? (s.image.original || s.image.medium) : null,
+        weight: s.weight || 0
+      };
+    });
+  }
+
+  // Убирает HTML-теги из описания
+  function stripHtml(html) {
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return (doc.body.textContent || "").trim();
+  }
+
+  function fmt(r) {
+    return r > 0 ? r.toFixed(1) : "—";
+  }
+
+  async function getJson(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }
+
+  async function getCatalog() {
+    if (!cache) {
+      cache = parseShows(await getJson(LIST_URL));
+    }
+    return cache;
+  }
+
+  function render(list, emptyText) {
+    grid.innerHTML = "";
+    if (list.length === 0) {
+      statusEl.textContent = emptyText;
+      return;
+    }
+    statusEl.textContent = "Сериалов: " + list.length;
+    for (const s of list) {
+      grid.appendChild(card(s));
+    }
+  }
+
+  function card(s) {
+    const el = document.createElement("div");
+    el.className = "card";
+
+    if (s.image) {
+      const img = document.createElement("img");
+      img.className = "poster";
+      img.loading = "lazy";
+      img.alt = "";
+      img.src = s.image;
+      el.appendChild(img);
+    } else {
+      const empty = document.createElement("div");
+      empty.className = "poster";
+      el.appendChild(empty);
+    }
+
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const title = document.createElement("div");
+    title.className = "card-title";
+    title.textContent = s.title;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = s.year + " • ★ " + fmt(s.rating);
+    const genres = document.createElement("div");
+    genres.className = "genres";
+    genres.textContent = s.genres;
+    body.append(title, meta, genres);
+    el.appendChild(body);
+
+    el.addEventListener("click", () => openModal(s));
+    return el;
+  }
+
+  function openModal(s) {
+    const isFav = favorites.some(f => f.id === s.id);
+    sheet.innerHTML = "";
+
+    const close = document.createElement("button");
+    close.className = "close";
+    close.textContent = "×";
+    close.addEventListener("click", closeModal);
+
+    const img = document.createElement("img");
+    img.alt = "";
+    if (s.imageBig) {
+      img.src = s.imageBig;
+    } else {
+      img.style.display = "none";
+    }
+
+    const info = document.createElement("div");
+    info.style.flex = "1";
+
+    const h = document.createElement("h2");
+    h.textContent = s.title;
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    meta.textContent = s.year + " • ★ " + fmt(s.rating);
+    const genres = document.createElement("div");
+    genres.className = "genres";
+    genres.textContent = s.genres;
+    const p = document.createElement("p");
+    p.textContent = s.overview || "Описание отсутствует";
+
+    const fav = document.createElement("button");
+    fav.className = "btn fav" + (isFav ? " on" : "");
+    fav.textContent = isFav ? "♥ В избранном" : "♡ В избранное";
+    fav.addEventListener("click", () => {
+      toggleFavorite(s);
+      openModal(s);
+    });
+
+    info.append(h, meta, genres, p, fav);
+    sheet.append(close, img, info);
+    modal.classList.add("open");
+  }
+
+  function closeModal() {
+    modal.classList.remove("open");
+  }
+
+  modal.addEventListener("click", e => {
+    if (e.target === modal) closeModal();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeModal();
+  });
+
+  function toggleFavorite(s) {
+    const idx = favorites.findIndex(f => f.id === s.id);
+    if (idx >= 0) {
+      favorites.splice(idx, 1);
+    } else {
+      favorites.push(s);
+    }
+    localStorage.setItem("series_favs", JSON.stringify(favorites));
+    if (category === "favorites") render(favorites, "В избранном пока пусто");
+  }
+
+  async function showCategory(cat) {
+    category = cat;
+    document.querySelectorAll(".tab").forEach(t => {
+      t.classList.toggle("active", t.dataset.cat === cat);
+    });
+
+    if (cat === "favorites") {
+      render(favorites, "В избранном пока пусто");
+      return;
+    }
+
+    const id = ++requestId;
+    grid.innerHTML = "";
+    statusEl.textContent = "Загружаю...";
+    try {
+      const all = await getCatalog();
+      if (id !== requestId) return;
+      let list;
+      if (cat === "rating") {
+        list = all.filter(s => s.rating > 0)
+                  .sort((a, b) => b.rating - a.rating)
+                  .slice(0, 40);
+      } else {
+        list = [...all].sort((a, b) => b.weight - a.weight).slice(0, 40);
+      }
+      render(list, "Ничего не найдено");
+    } catch (e) {
+      if (id === requestId) {
+        statusEl.textContent = "Не получилось загрузить. Проверь интернет и обнови страницу.";
+      }
+    }
+  }
+
+  async function search() {
+    const q = input.value.trim();
+    if (!q) return;
+    category = "search";
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+
+    const id = ++requestId;
+    grid.innerHTML = "";
+    statusEl.textContent = "Ищу...";
+    try {
+      const list = parseShows(await getJson(SEARCH_URL + encodeURIComponent(q)));
+      if (id !== requestId) return;
+      render(list, "Ничего не найдено");
+    } catch (e) {
+      if (id === requestId) {
+        statusEl.textContent = "Не получилось загрузить. Проверь интернет.";
+      }
+    }
+  }
+
+  document.querySelectorAll(".tab").forEach(t => {
+    t.addEventListener("click", () => showCategory(t.dataset.cat));
+  });
+  document.getElementById("searchBtn").addEventListener("click", search);
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") search();
+  });
+
+  showCategory("popular");
+
+</script>
+</body>
+</html>
