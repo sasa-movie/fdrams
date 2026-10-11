@@ -1,6 +1,152 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Видеоплеер</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+    .player {
+      width: 90%;
+      max-width: 800px;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    video {
+      width: 100%;
+      display: block;
+      cursor: pointer;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      background: #1c1c1c;
+      color: #fff;
+    }
+    .controls button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .controls button:hover {
+      background: #333;
+    }
+    .progress {
+      flex: 1;
+      cursor: pointer;
+    }
+    .time {
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .volume {
+      width: 70px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="player">
+    <video id="video" src="video.mp4" preload="metadata"></video>
+
+    <div class="controls">
+      <button id="backBtn" title="Назад на 10 секунд">⏪</button>
+      <button id="playBtn" title="Играть / пауза">▶</button>
+      <button id="forwardBtn" title="Вперёд на 10 секунд">⏩</button>
+      <input type="range" id="progress" class="progress" min="0" max="100" value="0" step="0.1">
+      <span id="time" class="time">0:00 / 0:00</span>
+      <button id="muteBtn" title="Звук">🔊</button>
+      <input type="range" id="volume" class="volume" min="0" max="1" step="0.05" value="1">
+      <button id="fullBtn" title="Во весь экран">⛶</button>
+    </div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const playBtn = document.getElementById('playBtn');
+    const backBtn = document.getElementById('backBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+    const progress = document.getElementById('progress');
+    const timeText = document.getElementById('time');
+    const muteBtn = document.getElementById('muteBtn');
+    const volume = document.getElementById('volume');
+    const fullBtn = document.getElementById('fullBtn');
+
+    // Превращает секунды в вид "1:05"
+    function formatTime(seconds) {
+      if (!isFinite(seconds)) return '0:00';
+      const min = Math.floor(seconds / 60);
+      const sec = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return min + ':' + sec;
+    }
+
+    // Старт / пауза
+    function togglePlay() {
+      if (video.paused) {
+        video.play();
+      } else {
+        video.pause();
+      }
+    }
+    playBtn.addEventListener('click', togglePlay);
+    video.addEventListener('click', togglePlay);
+    video.addEventListener('play', () => { playBtn.textContent = '⏸'; });
+    video.addEventListener('pause', () => { playBtn.textContent = '▶'; });
+
+    // Перемотка на 10 секунд
+    backBtn.addEventListener('click', () => {
+      video.currentTime = Math.max(0, video.currentTime - 10);
+    });
+    forwardBtn.addEventListener('click', () => {
+      video.currentTime += 10;
+    });
+
+    // Полоса прогресса и время
+    video.addEventListener('timeupdate', () => {
+      const percent = (video.currentTime / video.duration) * 100;
+      progress.value = isFinite(percent) ? percent : 0;
+      timeText.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+    });
+    progress.addEventListener('input', () => {
+      video.currentTime = (progress.value / 100) * video.duration;
+    });
+
+    // Звук
+    function updateMuteIcon() {
+      muteBtn.textContent = video.muted ? '🔇' : '🔊';
+    }
+    muteBtn.addEventListener('click', () => {
+      video.muted = !video.muted;
+      updateMuteIcon();
+    });
+    volume.addEventListener('input', () => {
+      video.volume = Number(volume.value);
+      video.muted = Number(volume.value) === 0;
+      updateMuteIcon();
+    });
+
+    // Полный экран
+    fullBtn.addEventListener('click', () => {
+      if (video.requestFullscreen) {
+        video.requestFullscreen();
+      }
+    });
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Сериалы</title>
